@@ -43,6 +43,11 @@ class Drill(games.Sprite):
         self.x = (driller.x - 1) - (38 * -math.sin(angle))
         self.y = driller.y - (38 * math.cos(angle))
 
+        if self.overlapping_sprites:
+            for sprite in self.overlapping_sprites:
+                if isinstance(sprite, Home):
+                    sprite.die()
+
 class Driller(games.Sprite):
     """ Буровая установка. """
     image = games.load_image("Images\Driller.bmp")
@@ -84,10 +89,10 @@ class Driller(games.Sprite):
             self.x += Driller.VALIOCITY_STEP * -math.sin(angle)
             self.y += Driller.VALIOCITY_STEP * math.cos(angle)
 
-        if self.overlapping_sprites:
-            for sprite in self.overlapping_sprites:
-                if isinstance(sprite, Home):
-                    sprite.die()
+        #if self.overlapping_sprites:
+            #for sprite in self.overlapping_sprites:
+                #if isinstance(sprite, Home):
+                    #sprite.die()
 
 
 # загрузка и назначение фоновой картинки
