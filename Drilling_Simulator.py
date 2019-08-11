@@ -25,6 +25,18 @@ class Home(games.Sprite):
 
 
 
+class Borehole(games.Sprite):
+    """ Скважина. """
+    image = games.load_image("Images\Borehole.bmp")
+
+    def __init__(self):
+        """ Инициализирует спрайт с изображением скважины. """
+        super(Borehole, self).__init__(image=Borehole.image,
+                                       x=games.screen.width / 2,
+                                       y=(games.screen.height / 2) + 50)
+
+
+
 class Drill(games.Sprite):
     """ Бур. """
     image = games.load_image("Images\Drill.bmp")
