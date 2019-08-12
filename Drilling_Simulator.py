@@ -2,6 +2,7 @@
 from livewires import games, color
 import math
 
+
 games.init(screen_width=1200, screen_height=700, fps=50)
 
 
@@ -23,10 +24,12 @@ class Home(games.Sprite):
                                    y=500)
 
 
+
 class Borehole(games.Sprite):
     """ Скважина. """
     image1 = games.load_image("Images\Borehole1.bmp")
     image2 = games.load_image("Images\Borehole2.bmp")
+    time = 5160
 
     def __init__(self):
         """ Инициализирует спрайт с изображением скважины. """
@@ -42,11 +45,29 @@ class Borehole(games.Sprite):
                                    is_collideable=False)
         games.screen.add(self.location)
 
+        self.text = "{0}".format(math.trunc(self.time / 86))
+
+        self.sec = games.Text(value=self.text,
+                              size=100,
+                              color=color.white,
+                              top=20,
+                              right=games.screen.width - 40,
+                              is_collideable=False)
+        games.screen.add(self.sec)
+
+    def update(self):
+        self.time -= 1
+        self.text = "{0}".format(math.trunc(self.time / 86))
+        self.sec.set_value(self.text)
+        if self.time <= 0:
+            self.time = 5160
 
     def drilling(self):
         super(Borehole, self).__init__(image=Borehole.image2,
-                                       x=1116,
-                                       y=168)
+                                       x=self.x,
+                                       y=self.y,
+                                       is_collideable=False) # обязательно ставить ФОЛС чтобы нельзя было взаимодействовать
+
 
 
 class Drill(games.Sprite):
@@ -109,24 +130,34 @@ class Driller(games.Sprite):
     ROTATION_STEP = .5
     VALIOCITY_STEP = .5
     VALIOCITY_MAX = 3
-    top_one = None
-    left_one = None
+
+    freeze_time = 0
 
     def __init__(self):
         """ Инициализирует спрайт с изображением космического корабля. """
         super(Driller, self).__init__(image=Driller.image,
                                       x=games.screen.width / 2,
                                       y=(games.screen.height / 2) + 50)
-        self.top_one = self.top
-        self.left_one = self.left
+
+        self.text = "  {0}  ".format(self.freeze_time)
+        self.frost = games.Text(value=self.text,
+                                size=60,
+                                color=color.red,
+                                top=40,
+                                left=500,
+                                is_collideable=False)
+        games.screen.add(self.frost)
 
     def freeze(self):
-        self.dx = 0
-        self.dy = 0
-
+        if self.freeze_time == 0:
+            self.freeze_time = 500
 
     def update(self):
         """ Переносит спрайт на противоположную сторону окна. """
+
+        self.text = "  {0}  ".format(self.freeze_time)
+        self.frost.set_value(self.text)
+
         if self.bottom > games.screen.height - 30:
             self.bottom = games.screen.height - 30
         if self.top < 130:
@@ -136,20 +167,31 @@ class Driller(games.Sprite):
         if self.left < 30:
             self.left = 30
 
-        if games.keyboard.is_pressed(games.K_LEFT):
-            self.angle -= Driller.ROTATION_STEP
-        if games.keyboard.is_pressed(games.K_RIGHT):
-            self.angle += Driller.ROTATION_STEP
-        if games.keyboard.is_pressed(games.K_UP):
-            angle = self.angle * math.pi / 180  # преобразование в радианы
-            self.x += Driller.VALIOCITY_STEP * math.sin(angle)
-            self.y += Driller.VALIOCITY_STEP * -math.cos(angle)
-        if games.keyboard.is_pressed(games.K_DOWN):
-            angle = self.angle * math.pi / 180  # преобразование в радианы
-            self.x += Driller.VALIOCITY_STEP * -math.sin(angle)
-            self.y += Driller.VALIOCITY_STEP * math.cos(angle)
-
-# загрузка и назначение фоновой картинки
+        if self.freeze_time <= 0:
+            if games.keyboard.is_pressed(games.K_LEFT):
+                self.angle -= Driller.ROTATION_STEP
+            if games.keyboard.is_pressed(games.K_RIGHT):
+                self.angle += Driller.ROTATION_STEP
+            if games.keyboard.is_pressed(games.K_UP):
+                angle = self.angle * math.pi / 180  # преобразование в радианы
+                self.x += Driller.VALIOCITY_STEP * math.sin(angle)
+                self.y += Driller.VALIOCITY_STEP * -math.cos(angle)
+            if games.keyboard.is_pressed(games.K_DOWN):
+                angle = self.angle * math.pi / 180  # преобразование в радианы
+                self.x += Driller.VALIOCITY_STEP * -math.sin(angle)
+                self.y += Driller.VALIOCITY_STEP * math.cos(angle)
+        if self.freeze_time > 0:
+            self.freeze_time -= 1
+            if games.keyboard.is_pressed(games.K_LEFT):
+                self.angle -= 0
+            if games.keyboard.is_pressed(games.K_RIGHT):
+                self.angle += 0
+            if games.keyboard.is_pressed(games.K_UP):
+                self.x += 0
+                self.y += 0
+            if games.keyboard.is_pressed(games.K_DOWN):
+                self.x += 0
+                self.y += 0
 
 
 bg_drill = games.load_image("Images\main2.jpg")
