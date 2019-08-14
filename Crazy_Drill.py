@@ -7,6 +7,22 @@ import random
 games.init(screen_width=1200, screen_height=700, fps=50)
 
 
+class Plus(games.Animation):
+    """ Анимация прибавления секунд. """
+    images = ["Images\plus\P0.bmp",
+              "Images\plus\P1.bmp",
+              "Images\plus\P2.bmp",
+              "Images\plus\P3.bmp",
+              "Images\plus\P4.bmp",
+              "Images\plus\P5.bmp"]
+
+    def __init__(self):
+        super(Plus, self).__init__(images=Plus.images,
+                                   x=1083, y=102,
+                                   repeat_interval=10, n_repeats=1,
+                                   is_collideable=False)
+
+
 class Loading(games.Animation):
     """ Анимация загрузки. """
     images = ["Images\loading\L0.bmp",
@@ -94,6 +110,11 @@ class Borehole(games.Sprite):
 class Drill(games.Sprite):
     """ Бур. """
     image = games.load_image("Images\Drill.bmp")
+    # переменная времени
+    total_time = 5699
+    time_text = None
+    minutes = 0
+    secounds = 0
 
     def __init__(self, game, x, y, ang, follower):
         """ Инициализирует спрайт с изображением бура. """
@@ -106,6 +127,14 @@ class Drill(games.Sprite):
 
     def update(self):
         """ Действия бура в реальном времени. """
+        Drill.total_time -= 1
+        Drill.minutes = math.trunc(Drill.total_time / 5160)
+        if Drill.minutes > 0:
+            Drill.secounds = math.trunc(Drill.total_time / 86) - 60 * Drill.minutes
+        else:
+            Drill.secounds = math.trunc(Drill.total_time / 86)
+        Drill.time_text = "{0}:{1}".format(Drill.minutes, Drill.secounds)
+        self.game.sec.set_value(Drill.time_text)
         # проверяем перекрытие бура со скважиной
         if self.overlapping_sprites:
             for sprite in self.overlapping_sprites:
@@ -190,6 +219,15 @@ class Game(object):
     y_drill = (games.screen.height / 2) + 50
     ang_drill = 0
 
+    def __init__(self):
+        self.sec = games.Text(value="1:00",
+                              size=100,
+                              color=color.white,
+                              top=20,
+                              right=games.screen.width - 40,
+                              is_collideable=False)
+        games.screen.add(self.sec)
+
     def advance(self):
         """ Создаем буровую машину и бур. """
         self.driller = Driller(game=self,
@@ -212,6 +250,10 @@ class Game(object):
         # создание анимации загрузки
         new_loading = Loading()
         games.screen.add(new_loading)
+        # создание анимации прибавления секунд
+        new_plus = Plus()
+        games.screen.add(new_plus)
+
 
     def die(self):
         # запоминаем последние координаты и углы спрайтов
