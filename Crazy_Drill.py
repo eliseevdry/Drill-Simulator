@@ -7,10 +7,32 @@ import random
 games.init(screen_width=1200, screen_height=700, fps=50)
 
 
+class Loading(games.Animation):
+    """ Анимация загрузки. """
+    images = ["Images\loading\L0.bmp",
+              "Images\loading\L1.bmp",
+              "Images\loading\L2.bmp",
+              "Images\loading\L3.bmp",
+              "Images\loading\L4.bmp",
+              "Images\loading\L5.bmp",
+              "Images\loading\L6.bmp",
+              "Images\loading\L7.bmp",
+              "Images\loading\L8.bmp",
+              "Images\loading\L9.bmp",
+              "Images\loading\L10.bmp"]
+
+    def __init__(self):
+        super(Loading, self).__init__(images=Loading.images,
+                                      x=600, y=50,
+                                      repeat_interval=50, n_repeats=1,
+                                      is_collideable=False)
+
+
 class Borehole(games.Sprite):
     """ Скважина. """
     image1 = games.load_image("Images\Borehole1.bmp")
     image2 = games.load_image("Images\Borehole2.bmp")
+    # создаем список координат наших скважин
     coord = [[61, 165], [61, 245], [61, 328], [61, 408], [61, 489], [61, 565], [61, 641],
              [337, 165], [337, 245], [337, 328], [337, 408], [337, 489], [337, 565], [337, 641],
              [411, 165], [411, 245], [411, 328], [411, 408], [411, 489], [411, 565], [411, 641],
@@ -28,30 +50,45 @@ class Borehole(games.Sprite):
              [1062, 165], [1062, 241], [1062, 365], [1062, 441], [1062, 565], [1062, 641], [1062, 503],
              [1138, 165], [1138, 241], [1138, 365], [1138, 441], [1138, 565], [1138, 641], [1138, 503]]
 
+    # создаем копию списка координат, чтобы можно было ее безболезненно изменять
     mutable_coord = coord[:]
+
     new_coord = None
 
     def __init__(self, game):
         """ Инициализирует спрайт с изображением скважины. """
         self.game = game
 
+        # выбираем случайные координаты из списка координат скважин
         self.new_coord = random.choice(self.mutable_coord)
+        # пока длинна списка координат скважины не станет равна нулю, удаляем из списка выбранные ранее координаты
         if len(self.mutable_coord) != 0:
             self.mutable_coord.remove(self.new_coord)
 
+        # создаем спрайт с новыми случайными координатами
         super(Borehole, self).__init__(image=Borehole.image1,
                                        x=self.new_coord[0],
                                        y=self.new_coord[1],
                                        is_collideable=True)
 
     def drilling(self):
+        # ПРОЦЕСС БУРЕНИЯ
+        # меняем изображение скважины и делаем ее пассивной с точки зрения взаимодействия
         super(Borehole, self).__init__(image=Borehole.image2,
                                        x=self.x,
                                        y=self.y,
                                        is_collideable=False)  # ставить ФОЛС чтобы нельзя было взаимодействовать
+        # создаем новую скважину в другом месте
         self.game.new_borehole()
+        # чтобы вновь созданный спрайт скважины не перекрывал буровую машину нужно сделать его приоритетным
+        # для этого сначала удаляем спрайт буровой машины и бура
         self.game.die()
+        # и тут же создаем их заново с теми же координатами и углом поворота
         self.game.advance()
+        # вызываем метод FROST объекта Game, который на определенное время заморозит нашу буровую машину
+        self.game.frost()
+        # инициализируем анимацию загрузки
+        self.game.loading()
 
 
 class Drill(games.Sprite):
@@ -68,12 +105,13 @@ class Drill(games.Sprite):
                                     angle=ang)
 
     def update(self):
-        """ Переносит спрайт на противоположную сторону окна. """
+        """ Действия бура в реальном времени. """
+        # проверяем перекрытие бура со скважиной
         if self.overlapping_sprites:
             for sprite in self.overlapping_sprites:
                 if isinstance(sprite, Borehole):
                     sprite.drilling()
-
+        # задаем физику движения бура в зависимости от движения буровой машины
         self.angle = self.follower.angle
         angle = self.angle * math.pi / 180  # преобразование в радианы
         self.x = (self.follower.x - 1) - (38 * -math.sin(angle))
@@ -81,13 +119,14 @@ class Drill(games.Sprite):
 
 
 class Driller(games.Sprite):
-    """ Буровая установка. """
+    """ Буровая машина. """
     image = games.load_image("Images\Driller.bmp")
     ROTATION_STEP = .5
     VALIOCITY_STEP = .5
+    freeze_time = 0
 
     def __init__(self, game, x, y, ang):
-        """ Инициализирует спрайт с изображением буровой установки. """
+        """ Инициализирует спрайт с изображением буровой машины. """
         self.game = game
         super(Driller, self).__init__(image=Driller.image,
                                       x=x,
@@ -95,7 +134,8 @@ class Driller(games.Sprite):
                                       angle=ang)
 
     def update(self):
-        """ Переносит спрайт на противоположную сторону окна. """
+        """ Действия буровой машины в реальном времени. """
+        # создаем рамки движения буровой машины
         if self.bottom > games.screen.height - 30:
             self.bottom = games.screen.height - 30
         if self.top < 130:
@@ -104,26 +144,45 @@ class Driller(games.Sprite):
             self.right = games.screen.width - 30
         if self.left < 30:
             self.left = 30
-        if games.keyboard.is_pressed(games.K_LEFT):
-            self.angle -= Driller.ROTATION_STEP
-        if games.keyboard.is_pressed(games.K_RIGHT):
-            self.angle += Driller.ROTATION_STEP
-        if games.keyboard.is_pressed(games.K_UP):
-            angle = self.angle * math.pi / 180  # преобразование в радианы
-            self.x += Driller.VALIOCITY_STEP * math.sin(angle)
-            self.y += Driller.VALIOCITY_STEP * -math.cos(angle)
-        if games.keyboard.is_pressed(games.K_DOWN):
-            angle = self.angle * math.pi / 180  # преобразование в радианы
-            self.x += Driller.VALIOCITY_STEP * -math.sin(angle)
-            self.y += Driller.VALIOCITY_STEP * math.cos(angle)
+        # описываем физику движения буровой машины
+        if self.freeze_time <= 0:
+            if games.keyboard.is_pressed(games.K_LEFT):
+                self.angle -= Driller.ROTATION_STEP
+            if games.keyboard.is_pressed(games.K_RIGHT):
+                self.angle += Driller.ROTATION_STEP
+            if games.keyboard.is_pressed(games.K_UP):
+                angle = self.angle * math.pi / 180  # преобразование в радианы
+                self.x += Driller.VALIOCITY_STEP * math.sin(angle)
+                self.y += Driller.VALIOCITY_STEP * -math.cos(angle)
+            if games.keyboard.is_pressed(games.K_DOWN):
+                angle = self.angle * math.pi / 180  # преобразование в радианы
+                self.x += Driller.VALIOCITY_STEP * -math.sin(angle)
+                self.y += Driller.VALIOCITY_STEP * math.cos(angle)
+        if self.freeze_time > 0:
+            self.freeze_time -= 1
+            if games.keyboard.is_pressed(games.K_LEFT):
+                self.angle -= 0
+            if games.keyboard.is_pressed(games.K_RIGHT):
+                self.angle += 0
+            if games.keyboard.is_pressed(games.K_UP):
+                self.x += 0
+                self.y += 0
+            if games.keyboard.is_pressed(games.K_DOWN):
+                self.x += 0
+                self.y += 0
+
+    def freeze(self):
+        self.freeze_time = 10 * games.screen.fps
 
 
 class Game(object):
     """ Собственно игра. """
     drillbg = games.load_image("Images\main2.jpg")
+    # инициализаторы спрайтов
     drill = None
     driller = None
     new_borehole = None
+    # координаты спрайтов для удаления и создания
     x_driller = games.screen.width / 2
     y_driller = games.screen.height / 2
     ang_driller = 0
@@ -132,7 +191,7 @@ class Game(object):
     ang_drill = 0
 
     def advance(self):
-        """ Создаем скважины и дома. """
+        """ Создаем буровую машину и бур. """
         self.driller = Driller(game=self,
                                x=self.x_driller,
                                y=self.y_driller,
@@ -146,18 +205,28 @@ class Game(object):
                            follower=self.driller)
         games.screen.add(self.drill)
 
+    def frost(self):
+        self.driller.freeze()
+
+    def loading(self):
+        # создание анимации загрузки
+        new_loading = Loading()
+        games.screen.add(new_loading)
+
     def die(self):
+        # запоминаем последние координаты и углы спрайтов
         self.x_driller = self.driller.x
         self.y_driller = self.driller.y
         self.ang_driller = self.driller.angle
         self.x_drill = self.drill.x
         self.y_drill = self.drill.y
         self.ang_drill = self.drill.angle
-
+        # удаляем спрайты
         self.driller.destroy()
         self.drill.destroy()
 
     def new_borehole(self):
+        # создаем новую скважину
         new_borehole = Borehole(game=self)
         games.screen.add(new_borehole)
 
@@ -165,9 +234,9 @@ class Game(object):
         """ Начинает игру. """
         # рисуем фоновую картинку
         games.screen.background = self.drillbg
-        # создание скважин
+        # создание первой скважины
         self.new_borehole()
-        # создание буровой машины
+        # создание буровой машины и бура
         self.advance()
         # начало игры
         games.screen.mainloop()
