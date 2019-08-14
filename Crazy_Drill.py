@@ -107,14 +107,10 @@ class Borehole(games.Sprite):
         self.game.loading()
 
 
+
 class Drill(games.Sprite):
     """ Бур. """
     image = games.load_image("Images\Drill.bmp")
-    # переменная времени
-    total_time = 5699
-    time_text = None
-    minutes = 0
-    secounds = 0
 
     def __init__(self, game, x, y, ang, follower):
         """ Инициализирует спрайт с изображением бура. """
@@ -127,14 +123,6 @@ class Drill(games.Sprite):
 
     def update(self):
         """ Действия бура в реальном времени. """
-        Drill.total_time -= 1
-        Drill.minutes = math.trunc(Drill.total_time / 5160)
-        if Drill.minutes > 0:
-            Drill.secounds = math.trunc(Drill.total_time / 86) - 60 * Drill.minutes
-        else:
-            Drill.secounds = math.trunc(Drill.total_time / 86)
-        Drill.time_text = "{0}:{1}".format(Drill.minutes, Drill.secounds)
-        self.game.sec.set_value(Drill.time_text)
         # проверяем перекрытие бура со скважиной
         if self.overlapping_sprites:
             for sprite in self.overlapping_sprites:
@@ -153,6 +141,11 @@ class Driller(games.Sprite):
     ROTATION_STEP = .5
     VALIOCITY_STEP = .5
     freeze_time = 0
+    # переменная времени
+    total_time = 5699
+    time_text = None
+    minutes = 0
+    secounds = 0
 
     def __init__(self, game, x, y, ang):
         """ Инициализирует спрайт с изображением буровой машины. """
@@ -164,6 +157,13 @@ class Driller(games.Sprite):
 
     def update(self):
         """ Действия буровой машины в реальном времени. """
+        Driller.minutes = math.trunc(Driller.total_time / 5160)
+        if Driller.minutes > 0:
+            Driller.secounds = math.trunc(Driller.total_time / 86) - 60 * Driller.minutes
+        else:
+            Driller.secounds = math.trunc(Driller.total_time / 86)
+        Driller.time_text = "{0}:{1}".format(Driller.minutes, Driller.secounds)
+        self.game.sec.set_value(Driller.time_text)
         # создаем рамки движения буровой машины
         if self.bottom > games.screen.height - 30:
             self.bottom = games.screen.height - 30
@@ -175,6 +175,7 @@ class Driller(games.Sprite):
             self.left = 30
         # описываем физику движения буровой машины
         if self.freeze_time <= 0:
+            Driller.total_time -= 1
             if games.keyboard.is_pressed(games.K_LEFT):
                 self.angle -= Driller.ROTATION_STEP
             if games.keyboard.is_pressed(games.K_RIGHT):
@@ -188,6 +189,7 @@ class Driller(games.Sprite):
                 self.x += Driller.VALIOCITY_STEP * -math.sin(angle)
                 self.y += Driller.VALIOCITY_STEP * math.cos(angle)
         if self.freeze_time > 0:
+            Driller.total_time -= 0
             self.freeze_time -= 1
             if games.keyboard.is_pressed(games.K_LEFT):
                 self.angle -= 0
@@ -202,6 +204,7 @@ class Driller(games.Sprite):
 
     def freeze(self):
         self.freeze_time = 10 * games.screen.fps
+        Driller.total_time += 860
 
 
 class Game(object):
