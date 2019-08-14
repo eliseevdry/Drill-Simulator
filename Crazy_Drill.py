@@ -142,7 +142,7 @@ class Driller(games.Sprite):
     VALIOCITY_STEP = .5
     freeze_time = 0
     # переменная времени
-    total_time = 5699
+    total_time = 10320
     time_text = None
     minutes = 0
     secounds = 0
@@ -160,8 +160,12 @@ class Driller(games.Sprite):
         Driller.minutes = math.trunc(Driller.total_time / 5160)
         if Driller.minutes > 0:
             Driller.secounds = math.trunc(Driller.total_time / 86) - 60 * Driller.minutes
+            if Driller.secounds < 10:
+                Driller.secounds = "0{0}".format(Driller.secounds)
         else:
             Driller.secounds = math.trunc(Driller.total_time / 86)
+            if Driller.secounds < 10:
+                Driller.secounds = "0{0}".format(Driller.secounds)
         Driller.time_text = "{0}:{1}".format(Driller.minutes, Driller.secounds)
         self.game.sec.set_value(Driller.time_text)
         # создаем рамки движения буровой машины
