@@ -56,6 +56,7 @@ class Borehole(games.Sprite):
     image2 = games.load_image("Images\Borehole2.bmp")
     #time = 5160
     #total = 0
+    total_sprites = []
 
     def __init__(self, game, x, y):
         """ Инициализирует спрайт с изображением скважины. """
@@ -63,9 +64,15 @@ class Borehole(games.Sprite):
         #Borehole.time += 860
         self.game = game
 
+        Borehole.total_sprites = game.sprites[:]
+
         super(Borehole, self).__init__(image=Borehole.image1,
                                        x=x,
-                                       y=y)
+                                       y=y,
+                                       is_collideable=True)
+
+        self.borehole_new()
+
 
         #self.location = games.Text(value="""  {0}   {1}""".format(self.x, self.y), #(665 - self.y, self.x - 35)
                                    #size=30,
@@ -84,6 +91,10 @@ class Borehole(games.Sprite):
                               #right=games.screen.width - 40,
                               #is_collideable=False)
         #games.screen.add(self.sec)
+
+    def borehole_new(self):
+        pass
+        #self.bore = self.total_sprites[0]
 
     def update(self):
         pass
@@ -228,37 +239,16 @@ class Driller(games.Sprite):
 
 class Game(object):
     """ Собственно игра. """
+    sprites = []
+    total_sprites = []
+    total_random = []
+
     def __init__(self):
         """ Инициализирует объект Game. """
         pass
 
-
     def advance(self):
         """ Создаем скважины и дома. """
-        self.coord = [[61, 165], [61, 245], [61, 328], [61, 408], [61, 489], [61, 565], [61, 641],
-                      [337, 165], [337, 245], [337, 328], [337, 408], [337, 489], [337, 565], [337, 641],
-                      [411, 165], [411, 245], [411, 328], [411, 408], [411, 489], [411, 565], [411, 641],
-                      [487, 165], [487, 245], [487, 328], [487, 408], [487, 489], [487, 565], [487, 641],
-                      [137, 165], [137, 232], [137, 300], [137, 365], [137, 441], [137, 508], [137, 576], [137, 641],
-                      [261, 165], [261, 232], [261, 300], [261, 365], [261, 441], [261, 508], [261, 576], [261, 641],
-                      [198, 365], [198, 441],
-                      [661, 241], [661, 321], [661, 399], [661, 479], [661, 558], [661, 641],
-                      [737, 241], [737, 321], [737, 399], [737, 479], [737, 558], [737, 641],
-                      [561, 241], [561, 165],
-                      [837, 241], [837, 165],
-                      [629, 165], [698, 165], [766, 165],
-                      [911, 165], [911, 241], [911, 365], [911, 441], [911, 565], [911, 641], [911, 304],
-                      [986, 165], [986, 241], [986, 365], [986, 441], [986, 565], [986, 641], [986, 304],
-                      [1062, 165], [1062, 241], [1062, 365], [1062, 441], [1062, 565], [1062, 641], [1062, 503],
-                      [1138, 165], [1138, 241], [1138, 365], [1138, 441], [1138, 565], [1138, 641], [1138, 503]]
-
-        self.coord_new = self.coord[:]
-
-        while len(self.coord_new) > 0:
-            a = random.choice(self.coord_new)
-            borehole = Borehole(game=self, x=a[0], y=a[1])
-            games.screen.add(borehole)
-            self.coord_new.remove(a)
 
         self.coord_h = [[178, 291], [178, 312], [178, 333], [178, 643],
                         [216, 471], [216, 492], [216, 513], [216, 534], [216, 555],
@@ -269,33 +259,29 @@ class Game(object):
                         [1035, 275], [1035, 296],
                         [1087, 275]]
 
-        self.coord_h_new = self.coord_h[:]
-
-        while len(self.coord_h_new) > 0:
-            a_h = random.choice(self.coord_h_new)
-            home = Home(game=self, x=a_h[0], y=a_h[1])
+        for i in range(len(self.coord_h)):
+            home = Home(game=self, x=self.coord_h[i][0], y=self.coord_h[i][1])
             games.screen.add(home)
-            self.coord_h_new.remove(a_h)
 
-        self.driller = Driller(game=self,
-                               x=games.screen.width / 2,
-                               y=games.screen.height / 2)
+        driller = Driller(game=self,
+                          x=games.screen.width / 2,
+                          y=games.screen.height / 2)
 
-        games.screen.add(self.driller)
+        games.screen.add(driller)
 
-        self.buffer = Buffer(game=self,
-                              x=games.screen.width / 2,
-                              y=games.screen.height / 2,
-                              follower=self.driller)
+        buffer = Buffer(game=self,
+                        x=games.screen.width / 2,
+                        y=games.screen.height / 2,
+                        follower=driller)
 
-        games.screen.add(self.buffer)
+        games.screen.add(buffer)
 
-        self.drill = Drill(game=self,
-                           x=games.screen.width / 2,
-                           y=(games.screen.height / 2) + 50,
-                           follower=self.driller)
+        drill = Drill(game=self,
+                      x=games.screen.width / 2,
+                      y=(games.screen.height / 2) + 50,
+                      follower=driller)
 
-        games.screen.add(self.drill)
+        games.screen.add(drill)
 
     def end(self):
         """ Завершает игру. """
@@ -315,6 +301,33 @@ class Game(object):
         # загрузка и назначение фоновой картинки
         drillbg = games.load_image("Images\main2.jpg")
         games.screen.background = drillbg
+
+        self.coord = [[61, 165], [61, 245], [61, 328], [61, 408], [61, 489], [61, 565], [61, 641],
+                      [337, 165], [337, 245], [337, 328], [337, 408], [337, 489], [337, 565], [337, 641],
+                      [411, 165], [411, 245], [411, 328], [411, 408], [411, 489], [411, 565], [411, 641],
+                      [487, 165], [487, 245], [487, 328], [487, 408], [487, 489], [487, 565], [487, 641],
+                      [137, 165], [137, 232], [137, 300], [137, 365], [137, 441], [137, 508], [137, 576], [137, 641],
+                      [261, 165], [261, 232], [261, 300], [261, 365], [261, 441], [261, 508], [261, 576], [261, 641],
+                      [198, 365], [198, 441],
+                      [661, 241], [661, 321], [661, 399], [661, 479], [661, 558], [661, 641],
+                      [737, 241], [737, 321], [737, 399], [737, 479], [737, 558], [737, 641],
+                      [561, 241], [561, 165],
+                      [837, 241], [837, 165],
+                      [629, 165], [698, 165], [766, 165],
+                      [911, 165], [911, 241], [911, 365], [911, 441], [911, 565], [911, 641], [911, 304],
+                      [986, 165], [986, 241], [986, 365], [986, 441], [986, 565], [986, 641], [986, 304],
+                      [1062, 165], [1062, 241], [1062, 365], [1062, 441], [1062, 565], [1062, 641], [1062, 503],
+                      [1138, 165], [1138, 241], [1138, 365], [1138, 441], [1138, 565], [1138, 641], [1138, 503]]
+
+        for i in range(len(self.coord)):
+            borehole = Borehole(game=self, x=self.coord[i][0], y=self.coord[i][1])
+            self.sprites.append(borehole)
+            games.screen.add(borehole)
+
+        self.sprites = self.sprites
+
+        print(self.sprites)
+
         # создание скважин
         self.advance()
         # начало игры
