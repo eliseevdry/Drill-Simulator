@@ -1,10 +1,48 @@
 
 from livewires import games, color
+import pygame
 import math
 import random
 
 
 games.init(screen_width=1200, screen_height=700, fps=50)
+
+
+class Bore(games.Animation):
+    """ Анимация бура. """
+    images = ["Images\Bore\B1.bmp",
+              "Images\Bore\B2.bmp"]
+
+    def __init__(self):
+        super(Bore, self).__init__(images=Bore.images,
+                                   left=90, bottom=91,
+                                   repeat_interval=10, n_repeats=0,
+                                   is_collideable=False)
+
+
+class Flag(games.Animation):
+    """ Анимация флага. """
+    images = ["Images\Flag\F1.bmp",
+              "Images\Flag\F2.bmp",
+              "Images\Flag\F3.bmp"]
+
+    def __init__(self):
+        super(Flag, self).__init__(images=Flag.images,
+                                   left=90, bottom=55,
+                                   repeat_interval=15, n_repeats=0,
+                                   is_collideable=False)
+
+
+class Engineer(games.Animation):
+    """ Анимация инженера. """
+    images = ["Images\engineer\E1.bmp",
+              "Images\engineer\E2.bmp"]
+
+    def __init__(self):
+        super(Engineer, self).__init__(images=Engineer.images,
+                                       left=23, top=10,
+                                       repeat_interval=250, n_repeats=0,
+                                       is_collideable=False)
 
 
 class Plus(games.Animation):
@@ -94,18 +132,18 @@ class Borehole(games.Sprite):
                                        x=self.x,
                                        y=self.y,
                                        is_collideable=False)  # ставить ФОЛС чтобы нельзя было взаимодействовать
-        # создаем новую скважину в другом месте
-        self.game.new_borehole()
+
         # чтобы вновь созданный спрайт скважины не перекрывал буровую машину нужно сделать его приоритетным
         # для этого сначала удаляем спрайт буровой машины и бура
         self.game.die()
+        # создаем новую скважину в другом месте
+        self.game.new_borehole()
         # и тут же создаем их заново с теми же координатами и углом поворота
         self.game.advance()
         # вызываем метод FROST объекта Game, который на определенное время заморозит нашу буровую машину
         self.game.frost()
         # инициализируем анимацию загрузки
         self.game.loading()
-
 
 
 class Drill(games.Sprite):
@@ -133,6 +171,8 @@ class Drill(games.Sprite):
         angle = self.angle * math.pi / 180  # преобразование в радианы
         self.x = (self.follower.x - 1) - (38 * -math.sin(angle))
         self.y = self.follower.y - (38 * math.cos(angle))
+        # передаем координаты бура объекту Game
+        self.game.location_drill.set_value("{0}   {1}".format(math.trunc(665 - self.y), math.trunc(self.x - 35)))
 
 
 class Driller(games.Sprite):
@@ -142,10 +182,10 @@ class Driller(games.Sprite):
     VALIOCITY_STEP = .5
     freeze_time = 0
     # переменная времени
-    total_time = 10320
+    total_time = 10400
     time_text = None
-    minutes = 0
-    secounds = 0
+    minutes = None
+    secounds = None
 
     def __init__(self, game, x, y, ang):
         """ Инициализирует спрайт с изображением буровой машины. """
@@ -157,6 +197,11 @@ class Driller(games.Sprite):
 
     def update(self):
         """ Действия буровой машины в реальном времени. """
+        if Driller.total_time < 0:
+            Driller.total_time = 0
+            self.game.die()
+            self.game.end()
+
         Driller.minutes = math.trunc(Driller.total_time / 5160)
         if Driller.minutes > 0:
             Driller.secounds = math.trunc(Driller.total_time / 86) - 60 * Driller.minutes
@@ -166,6 +211,7 @@ class Driller(games.Sprite):
             Driller.secounds = math.trunc(Driller.total_time / 86)
             if Driller.secounds < 10:
                 Driller.secounds = "0{0}".format(Driller.secounds)
+
         Driller.time_text = "{0}:{1}".format(Driller.minutes, Driller.secounds)
         self.game.sec.set_value(Driller.time_text)
         # создаем рамки движения буровой машины
@@ -225,6 +271,9 @@ class Game(object):
     x_drill = games.screen.width / 2
     y_drill = (games.screen.height / 2) + 50
     ang_drill = 0
+    # переменная для вывода координат скважины
+    location_borehole = None
+    location_drill = None
 
     def __init__(self):
         self.sec = games.Text(value="1:00",
@@ -233,7 +282,18 @@ class Game(object):
                               top=20,
                               right=games.screen.width - 40,
                               is_collideable=False)
+        self.sec.set_size(72, 'Fonts/Fixedsys.ttf')  # внес изменения в модуль Доусона
         games.screen.add(self.sec)
+
+        # создание анимации инженера
+        engineer = Engineer()
+        games.screen.add(engineer)
+        # создание анимации флага
+        flag = Flag()
+        games.screen.add(flag)
+        # создание анимации бура
+        bore = Bore()
+        games.screen.add(bore)
 
     def advance(self):
         """ Создаем буровую машину и бур. """
@@ -250,6 +310,15 @@ class Game(object):
                            follower=self.driller)
         games.screen.add(self.drill)
 
+        self.location_drill = games.Text(value="{0}   {1}".format(math.trunc(665 - self.drill.y), math.trunc(self.drill.x - 35)),
+                                         color=color.gray,
+                                         size=20,
+                                         y=78,
+                                         x=174,
+                                         is_collideable=False)
+        self.location_drill.set_size(26, 'Fonts/Fixedsys.ttf')  # внес изменения в модуль Доусона
+        games.screen.add(self.location_drill)
+
     def frost(self):
         self.driller.freeze()
 
@@ -260,7 +329,6 @@ class Game(object):
         # создание анимации прибавления секунд
         new_plus = Plus()
         games.screen.add(new_plus)
-
 
     def die(self):
         # запоминаем последние координаты и углы спрайтов
@@ -273,11 +341,35 @@ class Game(object):
         # удаляем спрайты
         self.driller.destroy()
         self.drill.destroy()
+        self.location_borehole.destroy()
+        self.location_drill.destroy()
 
     def new_borehole(self):
         # создаем новую скважину
         new_borehole = Borehole(game=self)
         games.screen.add(new_borehole)
+        self.location_borehole = games.Text(value="{0}   {1}".format(665 - new_borehole.y, new_borehole.x - 35),
+                                            color=color.red,
+                                            size=20,
+                                            y=42,
+                                            left=150,
+                                            is_collideable=False)
+        self.location_borehole.set_size(26, 'Fonts/Fixedsys.ttf')  # внес изменения в модуль Доусона
+        games.screen.add(self.location_borehole)
+
+    def end(self):
+        """ Завершает игру. """
+        # 5-секундное отображение 'Game Over'
+        end_message = games.Message(value="Потрачено",
+                                    size=90,
+                                    color=color.red,
+                                    x=games.screen.width/2,
+                                    y=games.screen.width/3,
+                                    lifetime=5 * games.screen.fps,
+                                    after_death=games.screen.quit,
+                                    is_collideable=False)
+        end_message.set_size(108, 'Fonts/Fixedsys.ttf')  # внес изменения в модуль Доусона
+        games.screen.add(end_message)
 
     def play(self):
         """ Начинает игру. """
