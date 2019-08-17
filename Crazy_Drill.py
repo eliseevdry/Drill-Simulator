@@ -108,6 +108,7 @@ class Borehole(games.Sprite):
     mutable_coord = coord[:]
 
     new_coord = None
+    time_till_dispatch = 0
 
     def __init__(self, game):
         """ Инициализирует спрайт с изображением скважины. """
@@ -161,6 +162,7 @@ class Drill(games.Sprite):
 
     def update(self):
         """ Действия бура в реальном времени. """
+        Borehole.time_till_dispatch += 1
         # проверяем перекрытие бура со скважиной
         if self.overlapping_sprites:
             for sprite in self.overlapping_sprites:
@@ -172,7 +174,10 @@ class Drill(games.Sprite):
         self.x = (self.follower.x - 1) - (38 * -math.sin(angle))
         self.y = self.follower.y - (38 * math.cos(angle))
         # передаем координаты бура объекту Game
-        self.game.location_drill.set_value("{0}   {1}".format(math.trunc(665 - self.y), math.trunc(self.x - 35)))
+        if Borehole.time_till_dispatch == 50:
+            self.game.location_drill.set_value("{0}   {1}".format(math.trunc(665 - self.y), math.trunc(self.x - 35)))
+            Borehole.time_till_dispatch = 0
+
 
 
 class Driller(games.Sprite):
@@ -276,6 +281,7 @@ class Game(object):
     location_drill = None
 
     def __init__(self):
+        # создание начального текста таймера
         self.sec = games.Text(value="1:00",
                               size=100,
                               color=color.white,
@@ -284,6 +290,17 @@ class Game(object):
                               is_collideable=False)
         self.sec.set_size(72, 'Fonts/Fixedsys.ttf')  # внес изменения в модуль Доусона
         games.screen.add(self.sec)
+
+        # создание указателей координат X и Y
+        self.position = games.Text(
+            value="X   Y",
+            color=color.white,
+            size=20,
+            y=10,
+            x=174,
+            is_collideable=False)
+        self.position.set_size(26, 'Fonts/Fixedsys.ttf')  # внес изменения в модуль Доусона
+        games.screen.add(self.position)
 
         # создание анимации инженера
         engineer = Engineer()
@@ -311,7 +328,7 @@ class Game(object):
         games.screen.add(self.drill)
 
         self.location_drill = games.Text(value="{0}   {1}".format(math.trunc(665 - self.drill.y), math.trunc(self.drill.x - 35)),
-                                         color=color.gray,
+                                         color=color.white,
                                          size=20,
                                          y=78,
                                          x=174,
