@@ -1,11 +1,22 @@
 
 from livewires import games, color
-import pygame
 import math
 import random
 
 
 games.init(screen_width=1200, screen_height=700, fps=50)
+
+
+class Pill(games.Sprite):
+    """ Изображение сваи """
+    image = games.load_image("Images\Total_borehole.bmp")
+
+    def __init__(self):
+        """ Инициализирует спрайт с изображением сваи. """
+        super(Pill, self).__init__(image=Pill.image,
+                                   x=300,
+                                   y=60,
+                                   is_collideable=False)
 
 
 class Bore(games.Animation):
@@ -43,6 +54,42 @@ class Engineer(games.Animation):
                                        left=23, top=10,
                                        repeat_interval=250, n_repeats=0,
                                        is_collideable=False)
+
+
+class Worker(games.Animation):
+    """ Анимация рабочего. """
+    images = ["Images\worker\W1.bmp",
+              "Images\worker\W2.bmp",
+              "Images\worker\W3.bmp",
+              "Images\worker\W4.bmp",
+              "Images\worker\W1.bmp",
+              "Images\worker\W2.bmp",
+              "Images\worker\W3.bmp",
+              "Images\worker\W4.bmp",
+              "Images\worker\W5.bmp",
+              "Images\worker\W6.bmp",
+              "Images\worker\W7.bmp",
+              "Images\worker\W8.bmp",
+              "Images\worker\W9.bmp",
+              "Images\worker\W10.bmp",
+              "Images\worker\W8.bmp",
+              "Images\worker\W7.bmp",
+              "Images\worker\W6.bmp",
+              "Images\worker\W5.bmp",
+              "Images\worker\W1.bmp",
+              "Images\worker\W2.bmp",
+              "Images\worker\W3.bmp",
+              "Images\worker\W4.bmp",
+              "Images\worker\W1.bmp",
+              "Images\worker\W2.bmp",
+              "Images\worker\W3.bmp",
+              "Images\worker\W4.bmp"]
+
+    def __init__(self):
+        super(Worker, self).__init__(images=Worker.images,
+                                     right=games.screen.width - 200, top=10,
+                                     repeat_interval=15, n_repeats=0,
+                                     is_collideable=False)
 
 
 class Plus(games.Animation):
@@ -171,13 +218,12 @@ class Drill(games.Sprite):
         # задаем физику движения бура в зависимости от движения буровой машины
         self.angle = self.follower.angle
         angle = self.angle * math.pi / 180  # преобразование в радианы
-        self.x = (self.follower.x - 1) - (38 * -math.sin(angle))
-        self.y = self.follower.y - (38 * math.cos(angle))
+        self.x = (self.follower.x - 1) - (41 * -math.sin(angle))
+        self.y = self.follower.y - (41 * math.cos(angle))
         # передаем координаты бура объекту Game
         if Borehole.time_till_dispatch == 50:
             self.game.location_drill.set_value("{0}   {1}".format(math.trunc(665 - self.y), math.trunc(self.x - 35)))
             Borehole.time_till_dispatch = 0
-
 
 
 class Driller(games.Sprite):
@@ -279,6 +325,8 @@ class Game(object):
     # переменная для вывода координат скважины
     location_borehole = None
     location_drill = None
+    # общее число пробуренных скважин
+    total_borehole = 0
 
     def __init__(self):
         # создание начального текста таймера
@@ -302,9 +350,26 @@ class Game(object):
         self.position.set_size(26, 'Fonts/Fixedsys.ttf')  # внес изменения в модуль Доусона
         games.screen.add(self.position)
 
+        # создание указателя колличества пробуренных скважин
+        self.counter_borehole = games.Text(value="{0}".format(Game.total_borehole),
+                                           size=100,
+                                           color=color.white,
+                                           y=60,
+                                           left=342,
+                                           is_collideable=False)
+        self.counter_borehole.set_size(64, 'Fonts/Fixedsys.ttf')  # внес изменения в модуль Доусона
+        games.screen.add(self.counter_borehole)
+
+        # создание анимации инженера
+        pill = Pill()
+        games.screen.add(pill)
+        print(pill.get_right())
         # создание анимации инженера
         engineer = Engineer()
         games.screen.add(engineer)
+        # создание анимации рабочего
+        worker = Worker()
+        games.screen.add(worker)
         # создание анимации флага
         flag = Flag()
         games.screen.add(flag)
@@ -338,6 +403,8 @@ class Game(object):
 
     def frost(self):
         self.driller.freeze()
+        Game.total_borehole += 1
+        self.counter_borehole.set_value("{0}".format(Game.total_borehole))
 
     def loading(self):
         # создание анимации загрузки
